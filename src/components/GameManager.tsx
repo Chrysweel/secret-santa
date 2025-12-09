@@ -5,14 +5,21 @@ import AssignmentDisplay from './AssignmentDisplay';
 import { useGame } from '../hooks/useGame';
 
 const GameManager = () => {
-    const { users, assignments, addUser, removeUser, assign, reset, loading } = useGame();
+    const { users, assignments, revealed, addUser, removeUser, assign, reset, markAsRevealed, loading } = useGame();
 
     if (loading) {
         return <div style={{ textAlign: 'center', marginTop: '2rem' }}>Cargando...</div>;
     }
 
     if (assignments.length > 0) {
-        return <AssignmentDisplay assignments={assignments} onReset={reset} />;
+        return (
+            <AssignmentDisplay
+                assignments={assignments}
+                revealed={revealed}
+                onMarkAsRevealed={markAsRevealed}
+                onReset={reset}
+            />
+        );
     }
 
     return (

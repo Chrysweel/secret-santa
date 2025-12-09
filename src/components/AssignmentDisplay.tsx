@@ -4,28 +4,32 @@ import RevealModal from './RevealModal';
 
 interface AssignmentDisplayProps {
     assignments: Assignment[];
+    revealed: Set<string>;
+    onMarkAsRevealed: (id: string) => void;
     onReset: () => void;
 }
 
 const UNLOCK_THRESHOLD = 4;
 
-const AssignmentDisplay: React.FC<AssignmentDisplayProps> = ({ assignments, onReset }) => {
+const AssignmentDisplay: React.FC<AssignmentDisplayProps> = ({ assignments, revealed, onMarkAsRevealed, onReset }) => {
     const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
-    const [revealedIds, setRevealedIds] = useState<Set<string>>(new Set());
     const [, setUnlockClicks] = useState<Record<string, number>>({});
 
+    // Better implementation for the unlock trick with props:
+    // We need a local state for 'temporarily unlocked' cards.
+    const [localUnlocks, setLocalUnlocks] = useState<Set<string>>(new Set());
+
     const handleCardClick = (assignment: Assignment) => {
-        const isLocked = revealedIds.has(assignment.giver.id);
+        const isPersistedLocked = revealed.has(assignment.giver.id);
+        const isLocallyUnlocked = localUnlocks.has(assignment.giver.id);
+        const isLocked = isPersistedLocked && !isLocallyUnlocked;
 
         if (isLocked) {
-            // Count clicks to unlock
             setUnlockClicks(prev => {
                 const currentClicks = (prev[assignment.giver.id] || 0) + 1;
                 if (currentClicks >= UNLOCK_THRESHOLD) {
-                    // Unlock
-                    const newRevealedIds = new Set(revealedIds);
-                    newRevealedIds.delete(assignment.giver.id);
-                    setRevealedIds(newRevealedIds);
+                    // Unlock locally
+                    setLocalUnlocks(prevUnlock => new Set(prevUnlock).add(assignment.giver.id));
 
                     // Reset clicks
                     const newClicks = { ...prev };
@@ -37,11 +41,13 @@ const AssignmentDisplay: React.FC<AssignmentDisplayProps> = ({ assignments, onRe
         } else {
             setSelectedAssignment(assignment);
         }
-    };
+    }
 
     const handleRevealComplete = () => {
         if (selectedAssignment) {
-            setRevealedIds(prev => new Set(prev).add(selectedAssignment.giver.id));
+            onMarkAsRevealed(selectedAssignment.giver.id);
+            // Also ensure it's not locally unlocked anymore if we just revealed it? 
+            // Or maybe it stays unlocked? Let's keep it simple.
         }
     };
 
@@ -78,7 +84,10 @@ const AssignmentDisplay: React.FC<AssignmentDisplayProps> = ({ assignments, onRe
                 justifyContent: 'center'
             }}>
                 {assignments.map((assignment) => {
-                    const isLocked = revealedIds.has(assignment.giver.id);
+                    const isPersistedLocked = revealed.has(assignment.giver.id);
+                    const isLocallyUnlocked = localUnlocks.has(assignment.giver.id);
+                    const isLocked = isPersistedLocked && !isLocallyUnlocked;
+
                     return (
                         <button
                             key={assignment.giver.id}

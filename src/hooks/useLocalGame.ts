@@ -4,6 +4,7 @@ import { assignSecretSanta, User, Assignment } from '../utils/secretSanta';
 export const useLocalGame = () => {
     const [users, setUsers] = useState<User[]>([]);
     const [assignments, setAssignments] = useState<Assignment[]>([]);
+    const [revealed, setRevealed] = useState<Set<string>>(new Set());
 
     const generateId = () => Math.random().toString(36).substr(2, 9);
 
@@ -19,6 +20,7 @@ export const useLocalGame = () => {
         try {
             const newAssignments = assignSecretSanta(users);
             setAssignments(newAssignments);
+            setRevealed(new Set());
         } catch (error: any) {
             alert(error.message);
         }
@@ -26,15 +28,22 @@ export const useLocalGame = () => {
 
     const reset = () => {
         setAssignments([]);
+        setRevealed(new Set());
+    };
+
+    const markAsRevealed = (userId: string) => {
+        setRevealed(prev => new Set(prev).add(userId));
     };
 
     return {
         users,
         assignments,
+        revealed,
         addUser,
         removeUser,
         assign,
         reset,
-        loading: false // Consistency with useFirebaseGame
+        markAsRevealed,
+        loading: false
     };
 };

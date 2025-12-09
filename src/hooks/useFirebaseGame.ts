@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { db } from '../firebase/firebase';
-import { collection, addDoc, onSnapshot, doc, deleteDoc, query, orderBy, setDoc } from 'firebase/firestore';
+import { collection, addDoc, onSnapshot, doc, deleteDoc, query, orderBy, setDoc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { assignSecretSanta, User, Assignment } from '../utils/secretSanta';
 
 // Using a fixed game ID for simplicity as per plan, or ideally a dynamic one.
@@ -10,6 +10,7 @@ const GAME_ID = 'default_game';
 export const useFirebaseGame = () => {
     const [users, setUsers] = useState<User[]>([]);
     const [assignments, setAssignments] = useState<Assignment[]>([]);
+    const [revealed, setRevealed] = useState<Set<string>>(new Set());
     const [loading, setLoading] = useState(true);
 
     // Subscribe to users
@@ -32,16 +33,17 @@ export const useFirebaseGame = () => {
         return () => unsubscribe();
     }, []);
 
-    // Subscribe to assignments
+    // Subscribe to assignments and revealed state
     useEffect(() => {
         const gameRef = doc(db, 'games', GAME_ID);
         const unsubscribe = onSnapshot(gameRef, (docSnap) => {
             if (docSnap.exists()) {
                 const data = docSnap.data();
                 setAssignments((data.assignments as Assignment[]) || []);
+                setRevealed(new Set((data.revealed as string[]) || []));
             }
         }, (error) => {
-            console.error("Error fetching assignments:", error);
+            console.error("Error fetching game data:", error);
         });
 
         return () => unsubscribe();
@@ -72,10 +74,13 @@ export const useFirebaseGame = () => {
     const assign = async () => {
         try {
             const newAssignments = assignSecretSanta(users);
-            // Save assignments to the game document
+            // Save assignments to the game document and reset revealed
             const gameRef = doc(db, 'games', GAME_ID);
-            // Use setDoc with merge to ensure document exists
-            await setDoc(gameRef, { assignments: newAssignments }, { merge: true });
+            // Use setDoc with merge 
+            await setDoc(gameRef, {
+                assignments: newAssignments,
+                revealed: []
+            }, { merge: true });
         } catch (error: any) {
             alert(error.message);
         }
@@ -84,19 +89,35 @@ export const useFirebaseGame = () => {
     const reset = async () => {
         try {
             const gameRef = doc(db, 'games', GAME_ID);
-            await setDoc(gameRef, { assignments: [] }, { merge: true });
+            await setDoc(gameRef, {
+                assignments: [],
+                revealed: []
+            }, { merge: true });
         } catch (error) {
             console.error("Error resetting game:", error);
+        }
+    };
+
+    const markAsRevealed = async (userId: string) => {
+        try {
+            const gameRef = doc(db, 'games', GAME_ID);
+            await updateDoc(gameRef, {
+                revealed: arrayUnion(userId)
+            });
+        } catch (error) {
+            console.error("Error marking as revealed:", error);
         }
     };
 
     return {
         users,
         assignments,
+        revealed,
         addUser,
         removeUser,
         assign,
         reset,
+        markAsRevealed,
         loading
     };
 };
