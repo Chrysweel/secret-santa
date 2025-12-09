@@ -1,64 +1,132 @@
 import React, { useState } from 'react';
 import { Assignment } from '../utils/secretSanta';
+import RevealModal from './RevealModal';
 
 interface AssignmentDisplayProps {
     assignments: Assignment[];
     onReset: () => void;
 }
 
+const UNLOCK_THRESHOLD = 4;
+
 const AssignmentDisplay: React.FC<AssignmentDisplayProps> = ({ assignments, onReset }) => {
-    const [currentIndex, setCurrentIndex] = useState(0);
-    const [isRevealed, setIsRevealed] = useState(false);
+    const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
+    const [revealedIds, setRevealedIds] = useState<Set<string>>(new Set());
+    const [, setUnlockClicks] = useState<Record<string, number>>({});
 
-    const currentAssignment = assignments[currentIndex];
-    const isLast = currentIndex === assignments.length - 1;
+    const handleCardClick = (assignment: Assignment) => {
+        const isLocked = revealedIds.has(assignment.giver.id);
 
-    const handleNext = () => {
-        setIsRevealed(false);
-        if (isLast) {
-            onReset();
+        if (isLocked) {
+            // Count clicks to unlock
+            setUnlockClicks(prev => {
+                const currentClicks = (prev[assignment.giver.id] || 0) + 1;
+                if (currentClicks >= UNLOCK_THRESHOLD) {
+                    // Unlock
+                    const newRevealedIds = new Set(revealedIds);
+                    newRevealedIds.delete(assignment.giver.id);
+                    setRevealedIds(newRevealedIds);
+
+                    // Reset clicks
+                    const newClicks = { ...prev };
+                    delete newClicks[assignment.giver.id];
+                    return newClicks;
+                }
+                return { ...prev, [assignment.giver.id]: currentClicks };
+            });
         } else {
-            setCurrentIndex(prev => prev + 1);
+            setSelectedAssignment(assignment);
+        }
+    };
+
+    const handleRevealComplete = () => {
+        if (selectedAssignment) {
+            setRevealedIds(prev => new Set(prev).add(selectedAssignment.giver.id));
         }
     };
 
     return (
-        <div style={{ textAlign: 'center' }}>
-            <h3 style={{ marginBottom: '2rem', color: 'var(--color-secondary)' }}>
-                Turno de: <br />
-                <span style={{ fontSize: '2rem', color: 'var(--color-text)' }}>
-                    {currentAssignment.giver.name}
-                </span>
-            </h3>
-
-            {!isRevealed ? (
+        <div style={{ width: '100%' }}>
+            <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '2rem'
+            }}>
+                <h2 style={{ fontSize: '1.5rem', margin: 0 }}>
+                    🎁 Selecciona tu nombre
+                </h2>
                 <button
-                    className="btn-primary"
-                    onClick={() => setIsRevealed(true)}
-                    style={{ fontSize: '1.2rem', padding: '1rem 2rem' }}
+                    onClick={onReset}
+                    style={{
+                        background: 'transparent',
+                        border: '1px solid var(--color-border)',
+                        padding: '0.5rem 1rem',
+                        borderRadius: '0.5rem',
+                        color: 'var(--color-text-dim)',
+                        cursor: 'pointer'
+                    }}
                 >
-                    🎁 Revelar a quién regalas
+                    Reiniciar Sorteo
                 </button>
-            ) : (
-                <div className="glass-panel" style={{ padding: '2rem', marginBottom: '2rem', background: 'rgba(139, 92, 246, 0.2)' }}>
-                    <p style={{ marginBottom: '0.5rem', color: 'var(--color-text-dim)' }}>Tu Amigo Invisible es:</p>
-                    <h2 style={{ fontSize: '2.5rem', margin: '1rem 0', color: 'var(--color-secondary)' }}>
-                        {currentAssignment.receiver.name}
-                    </h2>
-                    <button
-                        className="btn-primary"
-                        onClick={handleNext}
-                        style={{ marginTop: '1rem' }}
-                    >
-                        {isLast ? 'Terminar Juego' : 'Siguiente Turno'}
-                    </button>
-                </div>
-            )}
+            </div>
 
-            {!isRevealed && (
-                <p style={{ marginTop: '2rem', color: 'var(--color-text-dim)', fontSize: '0.9rem' }}>
-                    Asegúrate de que solo {currentAssignment.giver.name} esté mirando la pantalla.
-                </p>
+            <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
+                gap: '1.5rem',
+                justifyContent: 'center'
+            }}>
+                {assignments.map((assignment) => {
+                    const isLocked = revealedIds.has(assignment.giver.id);
+                    return (
+                        <button
+                            key={assignment.giver.id}
+                            onClick={() => handleCardClick(assignment)}
+                            className="glass-panel"
+                            style={{
+                                padding: '2rem 1rem',
+                                border: '1px solid var(--color-border)',
+                                background: isLocked ? 'rgba(0, 0, 0, 0.2)' : 'var(--color-surface)',
+                                color: isLocked ? 'var(--color-text-dim)' : 'var(--color-text)',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                gap: '1rem',
+                                transition: 'transform 0.2s, background 0.2s',
+                                textAlign: 'center',
+                                opacity: isLocked ? 0.6 : 1
+                            }}
+                            onMouseEnter={(e) => {
+                                if (!isLocked) {
+                                    e.currentTarget.style.transform = 'translateY(-5px)';
+                                    e.currentTarget.style.background = 'rgba(139, 92, 246, 0.1)';
+                                }
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = 'translateY(0)';
+                                e.currentTarget.style.background = isLocked ? 'rgba(0, 0, 0, 0.2)' : 'var(--color-surface)';
+                            }}
+                        >
+                            <div style={{ fontSize: '2rem' }}>{isLocked ? '🔒' : '👤'}</div>
+                            <span style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>
+                                {assignment.giver.name}
+                            </span>
+                            <span style={{ fontSize: '0.8rem', color: 'var(--color-text-dim)' }}>
+                                {isLocked ? 'Completado' : 'Toca para descubrir'}
+                            </span>
+                        </button>
+                    );
+                })}
+            </div>
+
+            {selectedAssignment && (
+                <RevealModal
+                    assignment={selectedAssignment}
+                    onClose={() => setSelectedAssignment(null)}
+                    onComplete={handleRevealComplete}
+                />
             )}
         </div>
     );
