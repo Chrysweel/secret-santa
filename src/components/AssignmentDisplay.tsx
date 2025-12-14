@@ -13,7 +13,7 @@ const UNLOCK_THRESHOLD = 4;
 
 const AssignmentDisplay: React.FC<AssignmentDisplayProps> = ({ assignments, revealed, onMarkAsRevealed, onReset }) => {
     const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
-    const [, setUnlockClicks] = useState<Record<string, number>>({});
+    const [, setUnlockClicks] = useState<{ id: string | null; count: number }>({ id: null, count: 0 });
 
     // Better implementation for the unlock trick with props:
     // We need a local state for 'temporarily unlocked' cards.
@@ -26,17 +26,17 @@ const AssignmentDisplay: React.FC<AssignmentDisplayProps> = ({ assignments, reve
 
         if (isLocked) {
             setUnlockClicks(prev => {
-                const currentClicks = (prev[assignment.giver.id] || 0) + 1;
-                if (currentClicks >= UNLOCK_THRESHOLD) {
-                    // Unlock locally
-                    setLocalUnlocks(prevUnlock => new Set(prevUnlock).add(assignment.giver.id));
-
-                    // Reset clicks
-                    const newClicks = { ...prev };
-                    delete newClicks[assignment.giver.id];
-                    return newClicks;
+                // If clicking the same card, increment count
+                if (prev.id === assignment.giver.id) {
+                    const newCount = prev.count + 1;
+                    if (newCount >= UNLOCK_THRESHOLD) {
+                        setLocalUnlocks(prevUnlock => new Set(prevUnlock).add(assignment.giver.id));
+                        return { id: null, count: 0 };
+                    }
+                    return { ...prev, count: newCount };
                 }
-                return { ...prev, [assignment.giver.id]: currentClicks };
+                // If clicking a different card, reset count to 1 for new card
+                return { id: assignment.giver.id, count: 1 };
             });
         } else {
             setSelectedAssignment(assignment);
