@@ -48,14 +48,14 @@ const ResetConfirmationModal: React.FC<ResetConfirmationModalProps> = ({ isOpen,
                     Esta acción no se puede deshacer.
                 </p>
                 <p style={{ fontSize: '0.9rem' }}>
-                    Escribe <strong>reiniciar</strong> para confirmar:
+                    Introduce la contraseña de administrador para continuar:
                 </p>
 
                 <input
-                    type="text"
+                    type="password"
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
-                    placeholder="Escribe 'reiniciar'"
+                    placeholder="Contraseña"
                     style={{
                         width: '100%',
                         padding: '0.75rem',
