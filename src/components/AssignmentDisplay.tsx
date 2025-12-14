@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Assignment } from '../utils/secretSanta';
 import RevealModal from './RevealModal';
+import ResetConfirmationModal from './ResetConfirmationModal';
 
 interface AssignmentDisplayProps {
     assignments: Assignment[];
@@ -51,6 +52,8 @@ const AssignmentDisplay: React.FC<AssignmentDisplayProps> = ({ assignments, reve
         }
     };
 
+    const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+
     return (
         <div style={{ width: '100%' }}>
             <div style={{
@@ -63,7 +66,7 @@ const AssignmentDisplay: React.FC<AssignmentDisplayProps> = ({ assignments, reve
                     🎁 Selecciona tu nombre
                 </h2>
                 <button
-                    onClick={onReset}
+                    onClick={() => setIsResetModalOpen(true)}
                     style={{
                         background: 'transparent',
                         border: '1px solid var(--color-border)',
@@ -137,6 +140,15 @@ const AssignmentDisplay: React.FC<AssignmentDisplayProps> = ({ assignments, reve
                     onComplete={handleRevealComplete}
                 />
             )}
+
+            <ResetConfirmationModal
+                isOpen={isResetModalOpen}
+                onClose={() => setIsResetModalOpen(false)}
+                onConfirm={() => {
+                    onReset();
+                    setIsResetModalOpen(false);
+                }}
+            />
         </div>
     );
 };
