@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 
 interface ResetConfirmationModalProps {
     isOpen: boolean;
@@ -19,7 +20,7 @@ const ResetConfirmationModal: React.FC<ResetConfirmationModalProps> = ({ isOpen,
 
     const isValid = inputValue.trim().toLowerCase() === 'reiniciar';
 
-    return (
+    return createPortal(
         <div style={{
             position: 'fixed',
             top: 0,
@@ -102,7 +103,8 @@ const ResetConfirmationModal: React.FC<ResetConfirmationModalProps> = ({ isOpen,
                     </button>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };
 

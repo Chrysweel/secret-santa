@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Assignment } from '../utils/secretSanta';
 
 interface RevealModalProps {
@@ -10,7 +11,7 @@ interface RevealModalProps {
 const RevealModal: React.FC<RevealModalProps> = ({ assignment, onClose, onComplete }) => {
     const [isConfirmed, setIsConfirmed] = useState(false);
 
-    return (
+    return createPortal(
         <div style={{
             position: 'fixed',
             top: 0,
@@ -105,7 +106,8 @@ const RevealModal: React.FC<RevealModalProps> = ({ assignment, onClose, onComple
                     </div>
                 )}
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };
 
