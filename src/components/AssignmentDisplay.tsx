@@ -86,51 +86,59 @@ const AssignmentDisplay: React.FC<AssignmentDisplayProps> = ({ assignments, reve
                 gap: '1.5rem',
                 justifyContent: 'center'
             }}>
-                {assignments.map((assignment) => {
-                    const isPersistedLocked = revealed.has(assignment.giver.id);
-                    const isLocallyUnlocked = localUnlocks.has(assignment.giver.id);
-                    const isLocked = isPersistedLocked && !isLocallyUnlocked;
+                {[...assignments]
+                    .sort((a, b) => {
+                        const isALocked = revealed.has(a.giver.id);
+                        const isBLocked = revealed.has(b.giver.id);
+                        if (isALocked === isBLocked) return 0;
+                        return isALocked ? 1 : -1;
+                    })
+                    .map((assignment) => {
 
-                    return (
-                        <button
-                            key={assignment.giver.id}
-                            onClick={() => handleCardClick(assignment)}
-                            className="glass-panel"
-                            style={{
-                                padding: '2rem 1rem',
-                                border: '1px solid var(--color-border)',
-                                background: isLocked ? 'rgba(0, 0, 0, 0.2)' : 'var(--color-surface)',
-                                color: isLocked ? 'var(--color-text-dim)' : 'var(--color-text)',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: 'center',
-                                gap: '1rem',
-                                transition: 'transform 0.2s, background 0.2s',
-                                textAlign: 'center',
-                                opacity: isLocked ? 0.6 : 1
-                            }}
-                            onMouseEnter={(e) => {
-                                if (!isLocked) {
-                                    e.currentTarget.style.transform = 'translateY(-5px)';
-                                    e.currentTarget.style.background = 'rgba(139, 92, 246, 0.1)';
-                                }
-                            }}
-                            onMouseLeave={(e) => {
-                                e.currentTarget.style.transform = 'translateY(0)';
-                                e.currentTarget.style.background = isLocked ? 'rgba(0, 0, 0, 0.2)' : 'var(--color-surface)';
-                            }}
-                        >
-                            <div style={{ fontSize: '2rem' }}>{isLocked ? '🔒' : '👤'}</div>
-                            <span style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>
-                                {assignment.giver.name}
-                            </span>
-                            <span style={{ fontSize: '0.8rem', color: 'var(--color-text-dim)' }}>
-                                {isLocked ? 'Completado' : 'Toca para descubrir'}
-                            </span>
-                        </button>
-                    );
-                })}
+                        const isPersistedLocked = revealed.has(assignment.giver.id);
+                        const isLocallyUnlocked = localUnlocks.has(assignment.giver.id);
+                        const isLocked = isPersistedLocked && !isLocallyUnlocked;
+
+                        return (
+                            <button
+                                key={assignment.giver.id}
+                                onClick={() => handleCardClick(assignment)}
+                                className="glass-panel"
+                                style={{
+                                    padding: '2rem 1rem',
+                                    border: '1px solid var(--color-border)',
+                                    background: isLocked ? 'rgba(0, 0, 0, 0.2)' : 'var(--color-surface)',
+                                    color: isLocked ? 'var(--color-text-dim)' : 'var(--color-text)',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    gap: '1rem',
+                                    transition: 'transform 0.2s, background 0.2s',
+                                    textAlign: 'center',
+                                    opacity: isLocked ? 0.6 : 1
+                                }}
+                                onMouseEnter={(e) => {
+                                    if (!isLocked) {
+                                        e.currentTarget.style.transform = 'translateY(-5px)';
+                                        e.currentTarget.style.background = 'rgba(139, 92, 246, 0.1)';
+                                    }
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(0)';
+                                    e.currentTarget.style.background = isLocked ? 'rgba(0, 0, 0, 0.2)' : 'var(--color-surface)';
+                                }}
+                            >
+                                <div style={{ fontSize: '2rem' }}>{isLocked ? '🔒' : '👤'}</div>
+                                <span style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>
+                                    {assignment.giver.name}
+                                </span>
+                                <span style={{ fontSize: '0.8rem', color: 'var(--color-text-dim)' }}>
+                                    {isLocked ? 'Completado' : 'Toca para descubrir'}
+                                </span>
+                            </button>
+                        );
+                    })}
             </div>
 
             {selectedAssignment && (
